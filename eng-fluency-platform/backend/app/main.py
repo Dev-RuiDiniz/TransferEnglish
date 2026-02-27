@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.middleware.tenant import TenantMiddleware
 from app.api.v1.endpoints import login, linguistics
+from app.api.ws.audio import audio_manager
+from fastapi import WebSocket
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -31,3 +33,8 @@ def health_check():
 
 app.include_router(login.router, prefix=settings.API_V1_STR, tags=["auth"])
 app.include_router(linguistics.router, prefix=f"{settings.API_V1_STR}/linguistics", tags=["linguistics"])
+
+@app.websocket("/ws/audio/{tenant_id}")
+async def websocket_audio_endpoint(websocket: WebSocket, tenant_id: str):
+    await audio_manager.connect(websocket, tenant_id)
+    await audio_manager.handle_audio_stream(websocket, tenant_id)
