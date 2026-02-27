@@ -1,0 +1,72 @@
+[
+    {
+        "english_word": "Problem",
+        "portuguese_word": "Problema",
+        "type": "adjusted",
+        "difficulty_level": "A1",
+        "phonetic_transcription": "/ˈprɒbləm/"
+    },
+    {
+        "english_word": "Radio",
+        "portuguese_word": "Rádio",
+        "type": "direct",
+        "difficulty_level": "A1",
+        "phonetic_transcription": "/ˈreɪdiəʊ/"
+    },
+    {
+        "english_word": "Idea",
+        "portuguese_word": "Ideia",
+        "type": "direct",
+        "difficulty_level": "A1",
+        "phonetic_transcription": "/aɪˈdɪə/"
+    },
+    {
+        "english_word": "Future",
+        "portuguese_word": "Futuro",
+        "type": "adjusted",
+        "difficulty_level": "A1",
+        "phonetic_transcription": "/ˈfjuːtʃə/"
+    },
+    {
+        "english_word": "Social",
+        "portuguese_word": "Social",
+        "type": "direct",
+        "difficulty_level": "A1",
+        "phonetic_transcription": "/ˈsəʊʃl/"
+    },
+    {
+        "english_word": "Natural",
+        "portuguese_word": "Natural",
+        "type": "direct",
+        "difficulty_level": "A1",
+        "phonetic_transcription": "/ˈnætʃrəl/"
+    },
+    {
+        "english_word": "Option",
+        "portuguese_word": "Opção",
+        "type": "adjusted",
+        "difficulty_level": "A1",
+        "phonetic_transcription": "/ˈɒpʃn/"
+    },
+    {
+        "english_word": "Music",
+        "portuguese_word": "Música",
+        "type": "adjusted",
+        "difficulty_level": "A1",
+        "phonetic_transcription": "/ˈmjuːzɪk/"
+    },
+    {
+        "english_word": "Example",
+        "portuguese_word": "Exemplo",
+        "type": "adjusted",
+        "difficulty_level": "A1",
+        "phonetic_transcription": "/ɪɡˈzɑːmpl/"
+    },
+    {
+        "english_word": "Decision",
+        "portuguese_word": "Decisão",
+        "type": "adjusted",
+        "difficulty_level": "A1",
+        "phonetic_transcription": "/dɪˈsɪʒn/"
+    }
+]

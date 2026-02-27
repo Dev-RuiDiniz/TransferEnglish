@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.middleware.tenant import TenantMiddleware
-from app.api.v1.endpoints import login
+from app.api.v1.endpoints import login, linguistics
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -29,4 +29,5 @@ def root():
 def health_check():
     return {"status": "healthy", "version": "0.1.0"}
 
-app.include_router(login.router, prefix=settings.API_V1_STR)
+app.include_router(login.router, prefix=settings.API_V1_STR, tags=["auth"])
+app.include_router(linguistics.router, prefix=f"{settings.API_V1_STR}/linguistics", tags=["linguistics"])
