@@ -52,5 +52,44 @@ A maioria dos estudantes de inglês sofre com a "fluência travada" apesar de an
 
 ---
 
+## 🗺️ Roadmap de Desenvolvimento (6 Meses)
+
+O projeto está dividido em 25 sprints semanais, organizadas em 6 fases críticas:
+
+1.  **Fase 1: Fundação** - Setup Nuxt 3, FastAPI, RLS e Base de Cognatos.
+2.  **Fase 2: Ciclo de Áudio** - WebSockets, Whisper e primeiro protótipo de voz.
+3.  **Fase 3: Inteligência Fonética** - Integração Azure e cálculo do IFP.
+4.  **Fase 4: Gamificação** - Sistema CEFR, badges e Modo Pressão.
+5.  **Fase 5: Adaptatividade & B2B** - Trilhas personalizadas e painel corporativo.
+6.  **Fase 6: Refinamento & Launch** - LGPD, Stripe e Deploy em Kubernetes.
+
+> [!TIP]
+> O detalhamento de cada sprint pode ser encontrado no diretório [`/sprints`](./sprints).
+
+---
+
+## 📦 Como Rodar (Desenvolvimento)
+
+*Em breve: Instruções para Docker Compose.*
+
+```bash
+# Clone o repositório
+git clone https://github.com/LuckArkman/eng-fluency-platform.git
+
+# Backend
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+
+# Frontend
+cd frontend
+npm install
+npm run dev
+```
+
+---
+
 ## 📄 Licença e Uso
 Este projeto é uma propriedade privada focada no mercado educacional SaaS. Para parcerias ou acesso corporativo, entre em contato.
