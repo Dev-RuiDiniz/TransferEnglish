@@ -1,11 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
+from app.middleware.tenant import TenantMiddleware
+from app.api.v1.endpoints import login
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
+
+app.add_middleware(TenantMiddleware)
 
 # Set all CORS enabled origins
 if settings.BACKEND_CORS_ORIGINS:
@@ -24,3 +28,5 @@ def root():
 @app.get("/api/v1/health")
 def health_check():
     return {"status": "healthy", "version": "0.1.0"}
+
+app.include_router(login.router, prefix=settings.API_V1_STR)
