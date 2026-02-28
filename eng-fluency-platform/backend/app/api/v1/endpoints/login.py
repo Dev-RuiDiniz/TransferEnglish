@@ -21,7 +21,6 @@ def register_user(
     """
     Self-service registration: Creates a new tenant and the first admin user.
     """
-    print(f"REGISTER REQUEST: {user_in}")
     user = db.query(User).filter(User.email == user_in.email).first()
     if user:
         raise HTTPException(status_code=400, detail="User with this email already exists.")
@@ -78,7 +77,16 @@ def login_access_token(
         "token_type": "bearer",
     }
 
-@router.post("/test-token", response_model=Token)
+@router.get("/me", response_model=UserSchema)
+def read_user_me(
+    current_user: User = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Get current user.
+    """
+    return current_user
+
+@router.post("/test-token", response_model=UserSchema)
 def test_token(current_user: User = Depends(deps.get_current_user)) -> Any:
     """
     Test access token

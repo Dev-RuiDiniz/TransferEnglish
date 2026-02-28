@@ -1,8 +1,7 @@
 <script setup lang="ts">
 const auth = useAuthStore()
-
-// If not authenticated, the composable should ideally handle the redirect or error
-// For now we assume authentication is handled by a middleware/guard
+const route = useRoute()
+const scenarioId = route.query.scenarioId as string
 </script>
 
 <template>
@@ -19,11 +18,14 @@ const auth = useAuthStore()
     </header>
 
     <main class="flex-grow flex items-center justify-center">
-      <AudioConversationCanvas :tenant-id="auth.tenantId || 'default-tenant'" />
+      <AudioConversationCanvas 
+        :tenant-id="auth.tenantId || 'default-tenant'" 
+        :scenario-id="scenarioId"
+      />
     </main>
 
     <footer class="max-w-4xl w-full mx-auto mt-8 py-6 border-t border-slate-900 text-center text-slate-600 text-[10px] font-bold uppercase tracking-widest">
-      LuckArkman Phonetic Engine v1.0 • Real-time Feedback Active
+      LuckArkman Gemini Engine v2.5 (Preview) • Google Generative AI Active
     </footer>
   </div>
 </template>

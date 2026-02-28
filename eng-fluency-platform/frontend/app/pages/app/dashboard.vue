@@ -87,11 +87,14 @@ const { data: mission } = await useFetch(`${config.public.apiBase}/recommendatio
         <h3 class="text-xl font-bold mb-6">Continue Learning</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div v-for="action in [
-            { title: 'Phonetic Review', desc: 'Improve your vowel reduction', icon: '🎙️' },
-            { title: 'Pressure Practice', desc: 'Survive the blitz mode', icon: '⚡' },
-            { title: 'Scenario Library', desc: 'Pick your own challenge', icon: '📚' },
+            { title: 'Phonetic Review', desc: 'Improve your vowel reduction', icon: '🎙️', link: '/app/practice' },
+            { title: 'Pressure Practice', desc: 'Survive the blitz mode', icon: '⚡', link: '/app/practice' },
+            { title: 'Scenario Library', desc: 'Pick your own challenge', icon: '📚', link: '/app/practice' },
             { title: 'Enterprise Stats', desc: 'View B2B performance', icon: '🏢', link: '/app/admin/dashboard' }
-          ]" :key="action.title" class="p-6 bg-slate-900/50 border border-slate-800 rounded-2xl hover:border-indigo-500/50 transition-all cursor-pointer group">
+          ]" :key="action.title" 
+            @click="action.link ? navigateTo(action.link) : null"
+            class="p-6 bg-slate-900/50 border border-slate-800 rounded-2xl hover:border-indigo-500/50 transition-all cursor-pointer group"
+          >
             <div class="text-2xl mb-4 grayscale group-hover:grayscale-0 transition-all">{{ action.icon }}</div>
             <h4 class="font-bold mb-1">{{ action.title }}</h4>
             <p class="text-xs text-slate-500">{{ action.desc }}</p>

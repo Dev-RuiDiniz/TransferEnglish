@@ -1,10 +1,15 @@
 from typing import List, Dict, Any
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+from app.core.config import settings
 
 class ChatService:
-    def __init__(self, model: str = "gpt-4o"):
-        self.llm = ChatOpenAI(model=model, temperature=0.7)
+    def __init__(self, model: str = "gemini-2.0-flash"):
+        self.llm = ChatGoogleGenerativeAI(
+            model=model, 
+            temperature=0.7,
+            google_api_key=settings.GOOGLE_API_KEY
+        )
         self.system_prompt = (
             "You are a specialized English tutor for Portuguese speakers. "
             "Your goal is to achieve functional fluency in 6 months using Linguistic Transfer. "

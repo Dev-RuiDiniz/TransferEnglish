@@ -11,9 +11,9 @@ class TenantMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
-        # Skip tenant validation for public endpoints
-        public_paths = ["/", "/api/v1/health", "/api/v1/login/access-token"]
-        if request.url.path in public_paths:
+        # Skip tenant validation for public endpoints and OPTIONS preflight
+        public_paths = ["/", "/api/v1/health", "/api/v1/login/access-token", "/api/v1/register"]
+        if request.method == "OPTIONS" or request.url.path in public_paths:
             return await call_next(request)
 
         auth_header = request.headers.get("Authorization")

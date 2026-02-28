@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const props = defineProps<{
   tenantId: string
+  scenarioId?: string
 }>()
 
 const { 
@@ -13,7 +14,7 @@ const {
   startRecording, 
   stopRecording,
   audioPlayer 
-} = useConversationLoop(props.tenantId)
+} = useConversationLoop(props.tenantId, props.scenarioId)
 </script>
 
 <template>

@@ -54,7 +54,7 @@ export const useAuthStore = defineStore('auth', {
             const config = useRuntimeConfig()
 
             try {
-                const { data } = await useFetch(`${config.public.apiBase}/login/test-token`, {
+                const { data } = await useFetch(`${config.public.apiBase}/me`, {
                     headers: {
                         Authorization: `Bearer ${this.token}`
                     }

@@ -25,3 +25,15 @@ class Cognate(CognateBase):
 
     class Config:
         from_attributes = True
+
+class ScenarioBase(BaseModel):
+    title: str
+    description: Optional[str] = None
+    config: dict
+    level: str = "intermediate"
+
+class Scenario(ScenarioBase):
+    id: str
+
+    class Config:
+        from_attributes = True

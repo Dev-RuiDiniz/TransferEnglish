@@ -31,7 +31,7 @@ class User(UserBase):
         from_attributes = True
 
 class UserRegister(BaseModel):
-    email: str
+    email: EmailStr
     password: str
     full_name: str
     organization_name: str

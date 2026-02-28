@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     
     # AI Services
     OPENAI_API_KEY: str = ""
+    GEMINI_API_KEY: str = ""
+    GOOGLE_API_KEY: str = ""
+    GOOGLE_PROJECT_NUMBER: str = ""
     AZURE_SPEECH_KEY: str = ""
     AZURE_SPEECH_REGION: str = "eastus"
     ELEVENLABS_API_KEY: str = ""
@@ -31,7 +34,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
-        case_sensitive=True
+        case_sensitive=True,
+        extra='ignore'
     )
 
 settings = Settings()

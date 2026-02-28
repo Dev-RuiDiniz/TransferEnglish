@@ -1,4 +1,4 @@
-export const useConversationLoop = (tenantId: string) => {
+export const useConversationLoop = (tenantId: string, scenarioId?: string) => {
     const { isRecording, startRecording, stopRecording, connect, socket } = useAudioRecorder(tenantId)
 
     const transcriptions = ref<string[]>([])
@@ -12,6 +12,15 @@ export const useConversationLoop = (tenantId: string) => {
 
     watch(socket, (newSocket) => {
         if (!newSocket) return
+
+        newSocket.onopen = () => {
+            if (scenarioId) {
+                newSocket.send(JSON.stringify({
+                    type: 'set_scenario',
+                    scenario_id: scenarioId
+                }))
+            }
+        }
 
         newSocket.onmessage = (event) => {
             const data = JSON.parse(event.data)
@@ -41,7 +50,7 @@ export const useConversationLoop = (tenantId: string) => {
     })
 
     const playAudioResponse = (base64Audio: string) => {
-        const audioBlob = b64toBlob(base64Audio, 'audio/mpeg')
+        const audioBlob = b64toBlob(base64Audio, 'audio/wav')
         const audioUrl = URL.createObjectURL(audioBlob)
 
         if (audioPlayer.value) {
