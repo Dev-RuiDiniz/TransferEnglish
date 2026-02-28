@@ -1,8 +1,9 @@
-from typing import Any, List
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from app.api import deps
 from app.models.user import User
+from app.services.reports.enterprise_generator import report_service
 from app.schemas.auth import UserCreate, User as UserSchema
 from app.core.security import get_password_hash
 
@@ -64,3 +65,36 @@ def toggle_user_active(
     db.commit()
     db.refresh(user)
     return user
+
+@router.get("/analytics/summary")
+def get_enterprise_analytics(
+    db: Session = Depends(deps.get_db_with_tenant),
+    current_admin: User = Depends(deps.get_current_admin)
+) -> Any:
+    """
+    Get aggregated analytics for the whole tenant.
+    """
+    summary = report_service.get_tenant_metrics(db, current_admin.tenant_id)
+    if not summary:
+        raise HTTPException(status_code=404, detail="No data available for this tenant")
+    return summary
+
+@router.get("/reports/pdf")
+def download_pdf_report(
+    db: Session = Depends(deps.get_db_with_tenant),
+    current_admin: User = Depends(deps.get_current_admin)
+) -> Any:
+    """
+    Download a PDF performance report for the organization.
+    """
+    summary = report_service.get_tenant_metrics(db, current_admin.tenant_id)
+    if not summary:
+        raise HTTPException(status_code=404, detail="No data available for this tenant")
+        
+    pdf_buffer = report_service.generate_pdf_report(summary, f"Tenant {current_admin.tenant_id}")
+    
+    return StreamingResponse(
+        pdf_buffer, 
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=fluency_report.pdf"}
+    )
