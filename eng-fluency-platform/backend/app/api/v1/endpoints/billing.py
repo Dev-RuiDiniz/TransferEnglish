@@ -56,3 +56,32 @@ def get_subscription_status(
         "plan": sub.plan_name,
         "expires_at": sub.current_period_end
     }
+
+@router.post("/webhook")
+async def stripe_webhook(request: Request, db: Session = Depends(deps.get_db)):
+    """
+    Handle Stripe webhooks to update subscription status.
+    """
+    payload = await request.body()
+    sig_header = request.headers.get("stripe-signature")
+    
+    event = payment_service.handle_webhook(payload, sig_header)
+    if not event:
+        raise HTTPException(status_code=400, detail="Invalid webhook signature")
+    
+    if event['type'] == 'customer.subscription.updated' or event['type'] == 'customer.subscription.created':
+        subscription = event['data']['object']
+        tenant_id = subscription['metadata'].get('tenant_id')
+        
+        if tenant_id:
+            db_sub = db.query(Subscription).filter(Subscription.tenant_id == tenant_id).first()
+            if not db_sub:
+                db_sub = Subscription(tenant_id=tenant_id)
+                db.add(db_sub)
+            
+            db_sub.stripe_subscription_id = subscription['id']
+            db_sub.status = subscription['status']
+            db_sub.plan_name = subscription['items']['data'][0]['price']['id'] # Or map to friendly name
+            db.commit()
+            
+    return {"status": "success"}
