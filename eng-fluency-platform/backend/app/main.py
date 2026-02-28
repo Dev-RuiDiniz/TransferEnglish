@@ -6,6 +6,14 @@ from app.api.v1.endpoints import login, linguistics, analytics, progression, gam
 from app.api.ws.audio import audio_manager
 from fastapi import WebSocket
 
+from app.models.base import Base
+from app.core.db.session import engine
+from app.models.user import User
+from app.models.tenant import Tenant
+
+# Create tables if they don't exist
+Base.metadata.create_all(bind=engine)
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json"

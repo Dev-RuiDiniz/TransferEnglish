@@ -21,6 +21,7 @@ def register_user(
     """
     Self-service registration: Creates a new tenant and the first admin user.
     """
+    print(f"REGISTER REQUEST: {user_in}")
     user = db.query(User).filter(User.email == user_in.email).first()
     if user:
         raise HTTPException(status_code=400, detail="User with this email already exists.")
