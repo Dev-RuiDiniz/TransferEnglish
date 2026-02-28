@@ -1,11 +1,10 @@
-<script setup lang="ts">
-const auth = useAuthStore()
-const users = ref([])
+const config = useRuntimeConfig()
+const users = ref<any[]>([])
 const isLoading = ref(true)
 
 const fetchUsers = async () => {
   try {
-    const response = await $fetch('/api/v1/admin/users', {
+    const response: any = await $fetch(`${config.public.apiBase}/admin/users`, {
       headers: {
         Authorization: `Bearer ${auth.token}`
       }

@@ -5,18 +5,26 @@ export const useAudioRecorder = (tenantId: string) => {
     const audioChunks = ref<Blob[]>([])
 
     const connect = () => {
-        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-        const wsUrl = `${wsProtocol}//${window.location.host}/ws/audio/${tenantId}`
+        const config = useRuntimeConfig()
+        const wsUrl = `${config.public.wsBase}/${tenantId}`
 
         socket.value = new WebSocket(wsUrl)
 
         socket.value.onopen = () => {
-            console.log('Audio WebSocket connected')
+            console.log('Audio WebSocket connected to', wsUrl)
         }
 
         socket.value.onmessage = (event) => {
             const response = JSON.parse(event.data)
             console.log('WS Message:', response)
+        }
+
+        socket.value.onerror = (error) => {
+            console.error('WebSocket Error:', error)
+        }
+
+        socket.value.onclose = () => {
+            console.log('WebSocket closed')
         }
     }
 

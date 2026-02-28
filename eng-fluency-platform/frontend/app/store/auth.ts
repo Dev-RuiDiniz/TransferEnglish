@@ -19,19 +19,26 @@ export const useAuthStore = defineStore('auth', {
     actions: {
         async login(email, password) {
             this.loading = true
+            const config = useRuntimeConfig()
             try {
-                const { data, error } = await useFetch('/api/v1/login/access-token', {
+                // OAuth2 expects form data for access-token
+                const formData = new URLSearchParams()
+                formData.append('username', email)
+                formData.append('password', password)
+
+                const { data, error } = await useFetch(`${config.public.apiBase}/login/access-token`, {
                     method: 'POST',
-                    body: { username: email, password },
+                    body: formData,
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
                 })
 
                 if (error.value) throw error.value
 
-                this.token = data.value.access_token
-                // Decode JWT manually or fetch user profile
+                this.token = (data.value as any).access_token
                 await this.fetchUserProfile()
 
-                // Save to localStorage or cookie
                 const cookie = useCookie('auth_token')
                 cookie.value = this.token
             } catch (err) {
@@ -44,16 +51,17 @@ export const useAuthStore = defineStore('auth', {
 
         async fetchUserProfile() {
             if (!this.token) return
+            const config = useRuntimeConfig()
 
             try {
-                const { data } = await useFetch('/api/v1/test-token', {
+                const { data } = await useFetch(`${config.public.apiBase}/login/test-token`, {
                     headers: {
                         Authorization: `Bearer ${this.token}`
                     }
                 })
                 if (data.value) {
-                    this.user = data.value
-                    this.tenantId = data.value.tenant_id
+                    this.user = data.value as User
+                    this.tenantId = (data.value as User).tenant_id
                 }
             } catch (err) {
                 this.logout()
