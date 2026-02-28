@@ -29,6 +29,10 @@ const handleLogin = async () => {
         <p class="text-slate-400 mt-2">Continue your journey to fluency</p>
       </div>
 
+      <div v-if="$route.query.registered" class="mb-6 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-4 rounded-xl text-sm text-center">
+        Registration successful! Please log in with your new account.
+      </div>
+
       <form @submit.prevent="handleLogin" class="space-y-6">
         <div>
           <label class="block text-sm font-medium text-slate-400 mb-2">Email Address</label>
