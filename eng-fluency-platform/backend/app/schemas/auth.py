@@ -12,3 +12,20 @@ class TokenPayload(BaseModel):
 class Login(BaseModel):
     email: EmailStr
     password: str
+
+class UserBase(BaseModel):
+    email: Optional[EmailStr] = None
+    is_active: Optional[bool] = True
+    full_name: Optional[str] = None
+    role: Optional[str] = "student"
+
+class UserCreate(UserBase):
+    email: EmailStr
+    password: str
+
+class User(UserBase):
+    id: str
+    tenant_id: str
+
+    class Config:
+        from_attributes = True

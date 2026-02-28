@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
+import { useAuthStore } from '~/store/auth'
+
 const auth = useAuthStore()
 
 onMounted(() => {
   const token = useCookie('auth_token').value
-  if (token) {
+  if (token && !auth.token) {
     auth.token = token
     auth.fetchUserProfile()
   }

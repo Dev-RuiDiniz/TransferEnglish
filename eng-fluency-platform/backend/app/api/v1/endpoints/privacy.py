@@ -11,7 +11,7 @@ router = APIRouter()
 def delete_my_data(
     db: Session = Depends(deps.get_db_with_tenant),
     current_user: User = Depends(deps.get_current_user)
-) -> Any:
+):
     """
     LGPD: Permanent deletion of all user data (Right to be Forgotten).
     """
@@ -21,7 +21,7 @@ def delete_my_data(
             status_code=500,
             detail="Error during data deletion. Please contact support."
         )
-    return None
+    return
 
 @router.get("/compliance-check")
 def get_privacy_info():

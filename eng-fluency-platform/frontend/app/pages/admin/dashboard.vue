@@ -1,3 +1,5 @@
+<script setup lang="ts">
+const auth = useAuthStore()
 const config = useRuntimeConfig()
 const users = ref<any[]>([])
 const isLoading = ref(true)

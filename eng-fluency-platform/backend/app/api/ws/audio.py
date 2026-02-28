@@ -11,7 +11,7 @@ from app.services.ai.scenario_manager import scenario_manager
 from app.services.ai.interruption_engine import interruption_engine
 from app.services.ai.pressure_engine import pressure_engine
 from typing import Dict, List
-from app.models.fluency_session import FluencySessionBase
+from app.schemas.analytics import FluencySessionBase
 
 class AudioSocketManager:
     def __init__(self):
