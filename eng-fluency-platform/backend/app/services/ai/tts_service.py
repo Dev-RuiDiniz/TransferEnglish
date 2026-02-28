@@ -8,7 +8,7 @@ class TTSService:
         self.elevenlabs_url = "https://api.elevenlabs.io/v1/text-to-speech"
         self.default_voice_id = "21m00Tcm4TlvDq8ikWAM" # Example voice (Rachel)
 
-    async def generate_speech(self, text: str, voice_id: Optional[str] = None) -> bytes:
+    async def generate_speech(self, text: str, voice_id: Optional[str] = None, settings: Optional[dict] = None) -> bytes:
         """
         Synthesize speech using ElevenLabs API.
         Returns audio bytes (mp3).
@@ -31,8 +31,8 @@ class TTSService:
             "text": text,
             "model_id": "eleven_monolingual_v1",
             "voice_settings": {
-                "stability": 0.5,
-                "similarity_boost": 0.5
+                "stability": settings.get("stability", 0.5) if settings else 0.5,
+                "similarity_boost": settings.get("similarity_boost", 0.5) if settings else 0.5
             }
         }
 

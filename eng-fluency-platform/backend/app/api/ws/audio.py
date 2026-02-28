@@ -1,12 +1,16 @@
 from fastapi import WebSocket, WebSocketDisconnect
 import json
 import base64
+import time
 import io
 from app.services.ai.asr_service import asr_service
 from app.services.ai.chat_service import chat_service
 from app.services.ai.tts_service import tts_service
+from app.services.ai.adaptation_logic import adaptation_logic
 from app.services.ai.interruption_engine import interruption_engine
 from app.services.ai.pressure_engine import pressure_engine
+from typing import Dict, List
+from app.models.fluency_session import FluencySessionBase
 
 class AudioSocketManager:
     def __init__(self):
@@ -39,13 +43,25 @@ class AudioSocketManager:
         Orchestrates the full cycle: User Audio -> Transcription -> LLM -> TTS -> Client
         """
         conversation_history = []
-        
+    
+        # Session tracking for adaptation (Sprint 16)
+        session_metrics = FluencySessionBase(
+            ifp_score=60.0, # Initial "Functional" baseline
+            accuracy_avg=70.0,
+            fluency_avg=70.0,
+            prosody_avg=70.0,
+            total_words=0,
+            duration_seconds=0.0,
+            response_latency_avg=1.0
+        )
+    
         try:
             while True:
                 data = await websocket.receive()
                 
                 if "bytes" in data:
                     # 1. Received binary audio chunk
+                    start_time = time.time()
                     audio_chunk = data["bytes"]
                     
                     # 2. Transcription (ASR)
@@ -56,11 +72,6 @@ class AudioSocketManager:
                     if not transcription.text.strip():
                         continue
 
-                    await websocket.send_json({
-                        "type": "transcription",
-                        "text": transcription.text
-                    })
-
                     # 3. Interruption Check (Pedagogical tips)
                     tip = await interruption_engine.analyze(transcription.text)
                     if tip:
@@ -69,23 +80,40 @@ class AudioSocketManager:
                             "data": tip
                         })
 
+                    # Update session metrics based on transcription
+                    session_metrics = adaptation_logic.update_metrics(session_metrics, transcription)
+
+                    # 4. Dynamic Adaptation (Sprint 16)
+                    system_mod = adaptation_logic.get_llm_instruction(session_metrics)
+                    tts_settings = adaptation_logic.get_tts_config(session_metrics)
+
+                    await websocket.send_json({
+                        "type": "transcription",
+                        "text": transcription.text
+                    })
+
                     # 4. AI Logic (Chat)
                     ai_response_text = await chat_service.get_response(
                         conversation_history, 
-                        transcription.text
+                        transcription.text,
+                        system_modifier=system_mod
                     )
                     
                     # Update history
                     conversation_history.append({"role": "user", "content": transcription.text})
                     conversation_history.append({"role": "assistant", "content": ai_response_text})
 
+                    # 5. Voice Synthesis (TTS)
+                    audio_response = await tts_service.generate_speech(
+                        ai_response_text,
+                        settings=tts_settings
+                    )
+
+                    # Send responses
                     await websocket.send_json({
                         "type": "ai_response",
                         "text": ai_response_text
                     })
-
-                    # 4. Voice Synthesis (TTS)
-                    audio_response = await tts_service.generate_speech(ai_response_text)
                     
                     if audio_response:
                         await websocket.send_json({

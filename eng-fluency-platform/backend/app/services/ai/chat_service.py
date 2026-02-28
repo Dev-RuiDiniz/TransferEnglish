@@ -14,8 +14,12 @@ class ChatService:
             "Keep responses short and conversational, suitable for audio interaction."
         )
 
-    async def get_response(self, history: List[Dict[str, str]], user_input: str) -> str:
-        messages = [SystemMessage(content=self.system_prompt)]
+    async def get_response(self, history: List[Dict[str, str]], user_input: str, system_modifier: str = "") -> str:
+        full_prompt = self.system_prompt
+        if system_modifier:
+            full_prompt += f"\n\nAdditional Instruction: {system_modifier}"
+            
+        messages = [SystemMessage(content=full_prompt)]
         
         # Add history
         for msg in history:
