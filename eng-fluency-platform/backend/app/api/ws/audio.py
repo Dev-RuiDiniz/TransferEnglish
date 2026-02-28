@@ -7,6 +7,7 @@ from app.services.ai.asr_service import asr_service
 from app.services.ai.chat_service import chat_service
 from app.services.ai.tts_service import tts_service
 from app.services.ai.adaptation_logic import adaptation_logic
+from app.services.ai.scenario_manager import scenario_manager
 from app.services.ai.interruption_engine import interruption_engine
 from app.services.ai.pressure_engine import pressure_engine
 from typing import Dict, List
@@ -43,6 +44,7 @@ class AudioSocketManager:
         Orchestrates the full cycle: User Audio -> Transcription -> LLM -> TTS -> Client
         """
         conversation_history = []
+        current_scenario_id = None
     
         # Session tracking for adaptation (Sprint 16)
         session_metrics = FluencySessionBase(
@@ -83,8 +85,16 @@ class AudioSocketManager:
                     # Update session metrics based on transcription
                     session_metrics = adaptation_logic.update_metrics(session_metrics, transcription)
 
-                    # 4. Dynamic Adaptation (Sprint 16)
+                    # 4. Dynamic Adaptation (Sprint 16) & Scenarios (Sprint 20)
                     system_mod = adaptation_logic.get_llm_instruction(session_metrics)
+                    
+                    if current_scenario_id:
+                        from app.core.db.session import SessionLocal
+                        with SessionLocal() as db:
+                            scenario_prompt = scenario_manager.get_scenario_prompt(db, current_scenario_id)
+                            if scenario_prompt:
+                                system_mod = f"{scenario_prompt}\n{system_mod}"
+
                     tts_settings = adaptation_logic.get_tts_config(session_metrics)
 
                     await websocket.send_json({
@@ -136,6 +146,9 @@ class AudioSocketManager:
                         await websocket.send_json({"type": "pong"})
                     elif message.get("type") == "clear_history":
                         conversation_history = []
+                    elif message.get("type") == "set_scenario":
+                        current_scenario_id = message.get("scenario_id")
+                        conversation_history = [] # Reset on new scenario
                     
         except WebSocketDisconnect:
             self.disconnect(websocket, tenant_id)
