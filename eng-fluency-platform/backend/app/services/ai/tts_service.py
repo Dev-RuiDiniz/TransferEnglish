@@ -1,44 +1,40 @@
 import os
-import google.generativeai as genai
+import io
+from gtts import gTTS
 from typing import Optional
 from app.core.config import settings
 
 class TTSService:
     def __init__(self, api_key: str = None):
         self.google_api_key = api_key or settings.GOOGLE_API_KEY
-        if self.google_api_key:
-            genai.configure(api_key=self.google_api_key)
-            self.model_name = "gemini-2.5-flash-native-audio-latest"
-        else:
-            self.model_name = None
+        # In a production environment, we'd use the Gemini 2.5 TTS model
+        # but for now, gTTS provides the immediate audio response requested by the user.
+        print("LuckArkman Voice Engine v2.5 initialized with gTTS fallback.")
 
     async def generate_speech(self, text: str, voice_id: Optional[str] = None, settings: Optional[dict] = None) -> bytes:
         """
-        Synthesize speech using Google Gemini TTS API.
-        Returns audio bytes (wav/mp3).
+        Synthesize speech from text using Google TTS.
+        Returns audio bytes (mp3).
         """
-        if not self.google_api_key:
-            print("Warning: GOOGLE_API_KEY missing. Skipping speech generation.")
+        if not text:
             return b""
 
         try:
-            model = genai.GenerativeModel(self.model_name)
-            # Use specific response_mime_type to get audio output
-            response = model.generate_content(
-                text,
-                generation_config=genai.types.GenerationConfig(
-                    response_mime_type="audio/wav"
-                )
-            )
+            # We use English (en) by default as the tutor is an English speaker
+            tts = gTTS(text=text, lang='en', slow=False)
             
-            # Extract audio from response parts
-            for part in response.candidates[0].content.parts:
-                if part.inline_data and part.inline_data.data:
-                    return part.inline_data.data
+            # Save to a byte buffer
+            buffer = io.BytesIO()
+            tts.write_to_fp(buffer)
+            buffer.seek(0)
             
-            return b""
+            audio_data = buffer.read()
+            if audio_data:
+                print(f"TTS: Generated {len(audio_data)} bytes of audio for: '{text[:30]}...'")
+            return audio_data
+
         except Exception as e:
-            print(f"Gemini TTS Error: {e}")
+            print(f"LuckArkman Voice Error (gTTS): {e}")
             return b""
 
 tts_service = TTSService()
