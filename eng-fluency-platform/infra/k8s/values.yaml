@@ -1,0 +1,40 @@
+replicaCount: 3
+
+image:
+  repository: luckarkman/eng-fluency-backend
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+service:
+  type: LoadBalancer
+  port: 80
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: api.transferenglish.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 1Gi
+  requests:
+    cpu: 250m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+
+env:
+  DATABASE_URL: "postgresql://user:pass@db-host:5432/dbname"
+  REDIS_URL: "redis://redis-host:6379/0"
+  API_V1_STR: "/api/v1"

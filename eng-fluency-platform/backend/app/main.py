@@ -1,11 +1,36 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
+from app.middleware.tenant import TenantMiddleware
+from app.api.v1.endpoints import login, linguistics, analytics, progression, gamification, recommendation, admin, privacy, billing
+from app.api.ws.audio import audio_manager
+from fastapi import WebSocket
+
+from app.models.base import Base
+from app.core.db.session import engine
+from app.models.user import User
+from app.models.tenant import Tenant
+
+# Create tables if they don't exist
+Base.metadata.create_all(bind=engine)
+
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+import logging
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors()},
+    )
+
+app.add_middleware(TenantMiddleware)
 
 # Set all CORS enabled origins
 if settings.BACKEND_CORS_ORIGINS:
@@ -24,3 +49,22 @@ def root():
 @app.get("/api/v1/health")
 def health_check():
     return {"status": "healthy", "version": "0.1.0"}
+
+app.include_router(login.router, prefix=settings.API_V1_STR, tags=["auth"])
+app.include_router(linguistics.router, prefix=f"{settings.API_V1_STR}/linguistics", tags=["linguistics"])
+app.include_router(analytics.router, prefix=f"{settings.API_V1_STR}/analytics", tags=["analytics"])
+app.include_router(progression.router, prefix=f"{settings.API_V1_STR}/progression", tags=["progression"])
+app.include_router(gamification.router, prefix=f"{settings.API_V1_STR}/gamification", tags=["gamification"])
+app.include_router(recommendation.router, prefix=f"{settings.API_V1_STR}/recommendation", tags=["recommendation"])
+app.include_router(admin.router, prefix=f"{settings.API_V1_STR}/admin", tags=["admin"])
+app.include_router(privacy.router, prefix=f"{settings.API_V1_STR}/privacy", tags=["privacy"])
+app.include_router(billing.router, prefix=f"{settings.API_V1_STR}/billing", tags=["billing"])
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
+@app.websocket("/ws/audio/{tenant_id}")
+async def websocket_audio_endpoint(websocket: WebSocket, tenant_id: str):
+    await audio_manager.connect(websocket, tenant_id)
+    await audio_manager.handle_audio_stream(websocket, tenant_id)
