@@ -8,7 +8,7 @@ class TTSService:
         self.google_api_key = api_key or settings.GOOGLE_API_KEY
         if self.google_api_key:
             genai.configure(api_key=self.google_api_key)
-            self.model_name = "gemini-2.5-flash-tts"
+            self.model_name = "gemini-2.5-flash-native-audio-latest"
         else:
             self.model_name = None
 

@@ -10,8 +10,8 @@ class ASRService:
         self.api_key = api_key or settings.GOOGLE_API_KEY
         if self.api_key:
             genai.configure(api_key=self.api_key)
-            # Upgraded to Gemini 2.5 as per the new models available in the account
-            self.model = genai.GenerativeModel("gemini-2.5-flash")
+            # Use the specialized native audio model for best ASR results
+            self.model = genai.GenerativeModel("gemini-2.5-flash-native-audio-latest")
         else:
             self.model = None
 
