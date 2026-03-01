@@ -1,4 +1,4 @@
-# 🇬🇧 LuckArkman - English Fluency Platform with AI
+# 🇬🇧 English Fluency Platform with AI
 
 ![Status](https://img.shields.io/badge/Status-In_Development-orange)
 ![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?logo=fastapi)
