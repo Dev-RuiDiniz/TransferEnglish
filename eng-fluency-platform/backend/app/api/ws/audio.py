@@ -57,69 +57,34 @@ class AudioSocketManager:
             response_latency_avg=1.0
         )
     
-        try:
-            while True:
-                data = await websocket.receive()
+        async def process_buffer():
+            nonlocal full_audio_accumulator
+            if not full_audio_accumulator:
+                return
+
+            try:
+                audio_buffer = asr_service.convert_to_wav(bytes(full_audio_accumulator))
+                transcription = await asr_service.transcribe(audio_buffer)
                 
-                if "bytes" in data:
-                    # 1. Received binary audio chunk
-                    start_time = time.time()
-                    audio_chunk = data["bytes"]
-                    
-                    # 2. Transcription (ASR)
-                    # Convert to proper buffer format
-                    audio_buffer = asr_service.convert_to_wav(audio_chunk)
-                    transcription = await asr_service.transcribe(audio_buffer)
-                    
-                    if not transcription.text.strip():
-                        continue
-
-                    # 3. Interruption Check (Pedagogical tips)
-                    tip = await interruption_engine.analyze(transcription.text)
-                    if tip:
-                        await websocket.send_json({
-                            "type": "quick_tip",
-                            "data": tip
-                        })
-
-                    # Update session metrics based on transcription
-                    session_metrics = adaptation_logic.update_metrics(session_metrics, transcription)
-
-                    # 4. Dynamic Adaptation (Sprint 16) & Scenarios (Sprint 20)
-                    system_mod = adaptation_logic.get_llm_instruction(session_metrics)
-                    
-                    if current_scenario_id:
-                        from app.core.db.session import SessionLocal
-                        with SessionLocal() as db:
-                            scenario_prompt = scenario_manager.get_scenario_prompt(db, current_scenario_id)
-                            if scenario_prompt:
-                                system_mod = f"{scenario_prompt}\n{system_mod}"
-
-                    tts_settings = adaptation_logic.get_tts_config(session_metrics)
-
+                if transcription.text.strip():
                     await websocket.send_json({
                         "type": "transcription",
                         "text": transcription.text
                     })
 
-                    # 4. AI Logic (Chat)
+                    # Chat response
                     ai_response_text = await chat_service.get_response(
                         conversation_history, 
                         transcription.text,
                         system_modifier=system_mod
                     )
                     
-                    # Update history
                     conversation_history.append({"role": "user", "content": transcription.text})
                     conversation_history.append({"role": "assistant", "content": ai_response_text})
 
-                    # 5. Voice Synthesis (TTS)
-                    audio_response = await tts_service.generate_speech(
-                        ai_response_text,
-                        settings=tts_settings
-                    )
-
-                    # Send responses
+                    # Voice
+                    audio_response = await tts_service.generate_speech(ai_response_text)
+                    
                     await websocket.send_json({
                         "type": "ai_response",
                         "text": ai_response_text
@@ -130,25 +95,36 @@ class AudioSocketManager:
                             "type": "audio_response",
                             "audio": base64.b64encode(audio_response).decode('utf-8')
                         })
+            except Exception as e:
+                print(f"Error processing buffer: {e}")
+            finally:
+                full_audio_accumulator = bytearray()
 
-                    # 5. Potential Pressure Mode Trigger (20% chance)
-                    import random
-                    if random.random() < 0.2:
-                        challenge = pressure_engine.trigger_challenge()
-                        await websocket.send_json({
-                            "type": "pressure_challenge",
-                            "data": challenge.model_dump()
-                        })
+        try:
+            while True:
+                data = await websocket.receive()
+                
+                if "bytes" in data:
+                    audio_chunk = data["bytes"]
+                    full_audio_accumulator.extend(audio_chunk)
+                    
+                    # Threshold for auto-processing if the buffer is getting too large
+                    if len(full_audio_accumulator) > 200000: 
+                        await process_buffer()
                 
                 elif "text" in data:
                     message = json.loads(data["text"])
-                    if message.get("type") == "ping":
+                    m_type = message.get("type")
+                    
+                    if m_type == "stop_recording":
+                        await process_buffer()
+                    elif m_type == "ping":
                         await websocket.send_json({"type": "pong"})
-                    elif message.get("type") == "clear_history":
+                    elif m_type == "clear_history":
                         conversation_history = []
-                    elif message.get("type") == "set_scenario":
+                    elif m_type == "set_scenario":
                         current_scenario_id = message.get("scenario_id")
-                        conversation_history = [] # Reset on new scenario
+                        conversation_history = []
                     
         except WebSocketDisconnect:
             self.disconnect(websocket, tenant_id)

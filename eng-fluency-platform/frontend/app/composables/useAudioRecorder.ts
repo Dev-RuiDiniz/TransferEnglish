@@ -31,17 +31,18 @@ export const useAudioRecorder = (tenantId: string) => {
     let animationFrameId: number | null = null
 
     const updateVisualizer = () => {
-        if (!analyser || !dataArray) return
+        const currentDataArray = dataArray
+        if (!analyser || !currentDataArray) return
 
-        analyser.getByteFrequencyData(dataArray)
+        analyser.getByteFrequencyData(currentDataArray)
 
         // Sample 12 frequency bands
-        const step = Math.floor(dataArray.length / 12)
+        const step = Math.floor(currentDataArray.length / 12)
         const newAudioData = []
         for (let i = 0; i < 12; i++) {
             let sum = 0
             for (let j = 0; j < step; j++) {
-                sum += dataArray[i * step + j]
+                sum += currentDataArray[i * step + j]
             }
             const average = sum / step
             // Map value roughly between 10px and 50px
@@ -65,9 +66,10 @@ export const useAudioRecorder = (tenantId: string) => {
             mediaRecorder.value = new MediaRecorder(stream)
 
             // Set up audio visualizer
-            audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
-            analyser = audioContext.createAnalyser()
-            const source = audioContext.createMediaStreamSource(stream)
+            const safeWindow = window as any
+            audioContext = new (safeWindow.AudioContext || safeWindow.webkitAudioContext)()
+            analyser = audioContext!.createAnalyser()
+            const source = audioContext!.createMediaStreamSource(stream)
             source.connect(analyser)
 
             analyser.fftSize = 64
@@ -77,7 +79,7 @@ export const useAudioRecorder = (tenantId: string) => {
             updateVisualizer()
 
             mediaRecorder.value.ondataavailable = (event) => {
-                if (event.data.size > 0 && socket.value?.readyState === WebSocket.OPEN) {
+                if (event.data.size > 0 && socket.value && socket.value.readyState === WebSocket.OPEN) {
                     // Send binary chunk
                     socket.value.send(event.data)
                 }
@@ -94,6 +96,10 @@ export const useAudioRecorder = (tenantId: string) => {
         if (mediaRecorder.value && isRecording.value) {
             mediaRecorder.value.stop()
             mediaRecorder.value.stream.getTracks().forEach(track => track.stop())
+
+            if (socket.value && socket.value.readyState === WebSocket.OPEN) {
+                socket.value.send(JSON.stringify({ type: 'stop_recording' }))
+            }
         }
         if (animationFrameId !== null) {
             cancelAnimationFrame(animationFrameId)

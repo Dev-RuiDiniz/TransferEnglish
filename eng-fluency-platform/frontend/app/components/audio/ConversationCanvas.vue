@@ -68,20 +68,17 @@ const {
     <!-- Controls -->
     <div class="flex items-center gap-6">
       <button 
-        @mousedown="startRecording" 
-        @mouseup="stopRecording"
-        @touchstart="startRecording"
-        @touchend="stopRecording"
+        @click="isRecording ? stopRecording() : startRecording()"
         class="w-20 h-20 rounded-full flex items-center justify-center transition-all shadow-xl group relative"
         :class="isRecording ? 'bg-red-500 shadow-red-500/20 scale-110' : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-500/20'"
       >
-        <div v-if="isRecording" class="w-6 h-6 bg-white rounded-sm"></div>
+        <div v-if="isRecording" class="w-6 h-6 bg-white rounded-sm animate-pulse"></div>
         <div v-else class="w-8 h-8 text-white">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
         </div>
         <!-- Tooltip -->
         <span class="absolute -top-12 left-1/2 -translate-x-1/2 px-3 py-1 bg-slate-900 text-xs text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-          Hold to Speak
+          {{ isRecording ? 'Click to Stop' : 'Click to Speak' }}
         </span>
       </button>
     </div>
