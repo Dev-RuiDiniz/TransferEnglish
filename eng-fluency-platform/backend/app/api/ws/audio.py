@@ -57,13 +57,23 @@ class AudioSocketManager:
             response_latency_avg=1.0
         )
     
+        system_mod = ""
+        full_audio_accumulator = bytearray()
+        audio_header = bytearray()
+
         async def process_buffer():
             nonlocal full_audio_accumulator
-            if not full_audio_accumulator:
+            if not full_audio_accumulator or websocket.client_state.value != 1: 
                 return
 
             try:
-                audio_buffer = asr_service.convert_to_wav(bytes(full_audio_accumulator))
+                # Prepend header if current buffer doesn't look like a start of file
+                # and we have a header stored from the beginning of the session
+                data_to_process = bytes(full_audio_accumulator)
+                if audio_header and not data_to_process.startswith(b'\x1a\x45\xdf\xa3'):
+                    data_to_process = bytes(audio_header) + data_to_process
+
+                audio_buffer = asr_service.convert_to_wav(data_to_process)
                 transcription = await asr_service.transcribe(audio_buffer)
                 
                 if transcription.text.strip():
@@ -72,9 +82,10 @@ class AudioSocketManager:
                         "text": transcription.text
                     })
 
-                    # Chat response
+                    # Chat Logic
+                    chat_history_mapped = [{"role": msg["role"], "content": msg["content"]} for msg in conversation_history]
                     ai_response_text = await chat_service.get_response(
-                        conversation_history, 
+                        chat_history_mapped, 
                         transcription.text,
                         system_modifier=system_mod
                     )
@@ -82,34 +93,43 @@ class AudioSocketManager:
                     conversation_history.append({"role": "user", "content": transcription.text})
                     conversation_history.append({"role": "assistant", "content": ai_response_text})
 
-                    # Voice
+                    # TTS
                     audio_response = await tts_service.generate_speech(ai_response_text)
                     
-                    await websocket.send_json({
-                        "type": "ai_response",
-                        "text": ai_response_text
-                    })
-                    
-                    if audio_response:
+                    if websocket.client_state.value == 1:
                         await websocket.send_json({
-                            "type": "audio_response",
-                            "audio": base64.b64encode(audio_response).decode('utf-8')
+                            "type": "ai_response",
+                            "text": ai_response_text
                         })
+                        
+                        if audio_response:
+                            await websocket.send_json({
+                                "type": "audio_response",
+                                "audio": base64.b64encode(audio_response).decode('utf-8')
+                            })
             except Exception as e:
-                print(f"Error processing buffer: {e}")
+                print(f"Error in process_buffer: {e}")
             finally:
                 full_audio_accumulator = bytearray()
 
         try:
-            while True:
+            # Initial system mod calculation
+            system_mod = adaptation_logic.get_llm_instruction(session_metrics)
+            
+            while websocket.client_state.value == 1:
                 data = await websocket.receive()
                 
                 if "bytes" in data:
                     audio_chunk = data["bytes"]
+                    
+                    # Capture the header if this is the start and it looks like a WebM header
+                    if len(audio_header) == 0 and audio_chunk.startswith(b'\x1a\x45\xdf\xa3'):
+                        # Keep the first chunk as potential header (matroska/webm headers are usually small)
+                        audio_header.extend(audio_chunk[:2048]) 
+
                     full_audio_accumulator.extend(audio_chunk)
                     
-                    # Threshold for auto-processing if the buffer is getting too large
-                    if len(full_audio_accumulator) > 200000: 
+                    if len(full_audio_accumulator) > 500000: # Threshold auto-transcribe
                         await process_buffer()
                 
                 elif "text" in data:
@@ -120,13 +140,20 @@ class AudioSocketManager:
                         await process_buffer()
                     elif m_type == "ping":
                         await websocket.send_json({"type": "pong"})
-                    elif m_type == "clear_history":
-                        conversation_history = []
                     elif m_type == "set_scenario":
                         current_scenario_id = message.get("scenario_id")
                         conversation_history = []
+                        # Refresh system prompt for new scenario
+                        from app.core.db.session import SessionLocal
+                        with SessionLocal() as db:
+                            scenario_prompt = scenario_manager.get_scenario_prompt(db, current_scenario_id)
+                            system_mod = f"{scenario_prompt}\n{adaptation_logic.get_llm_instruction(session_metrics)}"
+                    elif m_type == "clear_history":
+                        conversation_history = []
                     
         except WebSocketDisconnect:
+            pass
+        finally:
             self.disconnect(websocket, tenant_id)
 
 audio_manager = AudioSocketManager()

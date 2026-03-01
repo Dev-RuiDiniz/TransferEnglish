@@ -4,7 +4,7 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from app.core.config import settings
 
 class ChatService:
-    def __init__(self, model: str = "gemini-2.0-flash"):
+    def __init__(self, model: str = "gemini-2.5-flash"):
         self.llm = ChatGoogleGenerativeAI(
             model=model, 
             temperature=0.7,
